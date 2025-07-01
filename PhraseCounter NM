@@ -1,23 +1,25 @@
+"use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default function PhraseCounterApp() {
+export default function Home() {
   const [targetPhrase, setTargetPhrase] = useState("");
   const [listening, setListening] = useState(false);
   const [count, setCount] = useState(0);
   const [transcripts, setTranscripts] = useState<string[]>([]);
-  const recognitionRef = useRef(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
-      const SpeechRecognition = window.webkitSpeechRecognition;
+      const SpeechRecognition = (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.lang = "en-US";
       recognition.interimResults = false;
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: any) => {
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             const transcript = event.results[i][0].transcript.trim().toLowerCase();
@@ -30,7 +32,7 @@ export default function PhraseCounterApp() {
         }
       };
 
-      recognition.onerror = (e) => {
+      recognition.onerror = (e: any) => {
         console.error("Speech recognition error", e);
       };
 
