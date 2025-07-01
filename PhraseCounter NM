@@ -1,0 +1,87 @@
+import React, { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+export default function PhraseCounterApp() {
+  const [targetPhrase, setTargetPhrase] = useState("");
+  const [listening, setListening] = useState(false);
+  const [count, setCount] = useState(0);
+  const [transcripts, setTranscripts] = useState<string[]>([]);
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            const transcript = event.results[i][0].transcript.trim().toLowerCase();
+            const normalizedPhrase = targetPhrase.trim().toLowerCase();
+            setTranscripts((prev) => [transcript, ...prev]);
+            if (transcript.includes(normalizedPhrase)) {
+              setCount((prev) => prev + 1);
+            }
+          }
+        }
+      };
+
+      recognition.onerror = (e) => {
+        console.error("Speech recognition error", e);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, [targetPhrase]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+    if (listening) {
+      recognitionRef.current.stop();
+      setListening(false);
+    } else {
+      setCount(0);
+      setTranscripts([]);
+      recognitionRef.current.start();
+      setListening(true);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-4 shadow-xl">
+        <CardContent>
+          <h2 className="text-2xl font-bold mb-4">Phrase Repetition Counter</h2>
+          <input
+            type="text"
+            className="border rounded w-full p-2 mb-4"
+            placeholder="Enter target phrase..."
+            value={targetPhrase}
+            onChange={(e) => setTargetPhrase(e.target.value)}
+            disabled={listening}
+          />
+          <Button onClick={toggleListening} className="w-full mb-4">
+            {listening ? "Stop Listening" : "Start Listening"}
+          </Button>
+          <div className="text-center text-lg mb-4">
+            Repeated <span className="font-bold text-blue-600">{count}</span> time(s)
+          </div>
+          <div className="text-sm text-gray-600">
+            <h3 className="font-semibold mb-2">Transcripts:</h3>
+            <ul className="space-y-1 max-h-40 overflow-y-auto">
+              {transcripts.map((t, i) => (
+                <li key={i} className="bg-gray-100 rounded p-2">
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
